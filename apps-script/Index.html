@@ -2,11 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>River Teams Ushers — Sign Up</title>
-<meta name="description" content="River at Tampa Bay Church · River Teams Ushers · Ministry of Helps self-scheduling">
-<meta property="og:title" content="River Teams Ushers — Self-Scheduling">
-<meta property="og:description" content="Pick the services you can serve. You'll be added to the Planning Center schedule.">
+<base target="_top">
 <style>
   :root {
     --bg: #f5f7fa; --card: #ffffff; --ink: #1b2430; --muted: #5d6b7c; --line: #dfe5ec;
@@ -60,6 +56,7 @@
   .day-head.special .event { color: var(--spec); }
   .svc { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
   .svc:first-of-type { border-top: 0; }
+  .tag.off { background: var(--err-bg); color: var(--err); }
   .svc input { width: 24px; height: 24px; accent-color: var(--brand); flex: none; }
   .svc .what { flex: 1; min-width: 0; }
   .svc .time { font-weight: 600; }
@@ -79,7 +76,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body>
+<body data-code="<?= code ?>">
 <header>
   <div class="church">River at Tampa Bay Church</div>
   <h1>River Teams Ushers</h1>
@@ -92,9 +89,17 @@
   <!-- Step 1: who are you -->
   <form id="signin" class="card" novalidate>
     <div class="field">
+      <label for="name">Your name</label>
+      <input id="name" type="text" autocomplete="name" required placeholder="First and last name">
+    </div>
+    <div class="field">
       <label for="email">Your email</label>
       <input id="email" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com">
-      <p class="hint">Use the email Planning Center has on file for you.</p>
+      <p class="hint">Use the same email each time so we can show what you're already on.</p>
+    </div>
+    <div class="field">
+      <label for="phone">Mobile phone <span class="hint">(optional)</span></label>
+      <input id="phone" type="text" autocomplete="tel" inputmode="tel" placeholder="(813) 555-1234">
     </div>
     <div class="field hidden" id="codeField">
       <label for="code">Team access code</label>
@@ -128,20 +133,31 @@
 
 <script>
 (() => {
-  const API = '/api/pco';
   const $ = (id) => document.getElementById(id);
-  const state = { email: '', code: '', services: [], selected: new Set(), filter: 'all' };
+  // services: from the server; want: keys the usher has checked (starts as what they're on)
+  const state = { name: '', email: '', phone: '', code: '', services: [], want: new Set(), filter: 'all' };
 
   const store = {
     get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
     set(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} },
   };
 
-  // A code in the link (…/?code=XYZ) saves ushers from typing it.
-  const params = new URLSearchParams(location.search);
-  state.code = params.get('code') || store.get('usherCode');
+  // A code in the link (…/exec?code=XYZ) saves ushers from typing it.
+  state.code = document.body.dataset.code || store.get('usherCode');
   if (state.code) $('code').value = state.code;
+  $('name').value = store.get('usherName');
   $('email').value = store.get('usherEmail');
+  $('phone').value = store.get('usherPhone');
+
+  // google.script.run as a promise
+  const server = (fn, ...args) => new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler((err) => {
+      const msg = String((err && err.message) || err).replace(/^Error:\s*/, '');
+      const e = new Error(msg.replace(/^ACCESS_CODE:\s*/, ''));
+      e.needsCode = msg.startsWith('ACCESS_CODE');
+      reject(e);
+    })[fn](...args);
+  });
 
   function show(text, kind = 'err') {
     const m = $('msg');
@@ -156,7 +172,7 @@
   const dateOf = (ymd) => { const [y, m, d] = ymd.split('-').map(Number); return new Date(y, m - 1, d); };
   const fmtDay = (ymd) => dateOf(ymd).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   const fmtMonth = (ymd) => dateOf(ymd).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const fmtShort = (s) => `${dateOf(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${s.session} (${s.startLabel})`;
+  const fmtShort = (s) => `${dateOf(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${s.session} (${s.time})`;
 
   function matches(s) {
     switch (state.filter) {
@@ -168,23 +184,16 @@
     }
   }
 
-  async function call(method, query, body) {
-    const url = method === 'GET' ? `${API}?${new URLSearchParams(query)}` : API;
-    const res = await fetch(url, {
-      method,
-      headers: body ? { 'content-type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const data = await res.json().catch(() => ({ error: 'Unexpected response from server.' }));
-    if (!res.ok) { const e = new Error(data.error || res.statusText); e.status = res.status; throw e; }
-    return data;
-  }
+  const changes = () => ({
+    add: state.services.filter((s) => !s.scheduled && state.want.has(s.key)).map((s) => s.key),
+    remove: state.services.filter((s) => s.scheduled && !state.want.has(s.key)).map((s) => s.key),
+  });
 
   async function load() {
-    const data = await call('GET', { email: state.email, code: state.code });
+    const data = await server('getServices', state.email, state.code);
     state.services = data.services;
-    state.selected.clear();
-    $('who').textContent = `Hi, ${data.usher.name}`;
+    state.want = new Set(state.services.filter((s) => s.scheduled).map((s) => s.key));
+    $('who').textContent = `Hi, ${state.name}`;
     if (state.services.length) {
       const first = state.services[0].date, last = state.services[state.services.length - 1].date;
       $('windowText').textContent = `Services from ${fmtDay(first)} through ${fmtDay(last)}`;
@@ -212,15 +221,16 @@
         html += `<div class="day"><div class="day-head ${s.kind}"><span>${esc(fmtDay(s.date))}</span>${ev}</div>`;
         day = s.date;
       }
-      const id = `svc_${s.key}`;
-      const tag = s.scheduled ? '<span class="tag on">You\'re on</span>'
+      const id = `svc_${s.key}`, checked = state.want.has(s.key);
+      const tag = s.scheduled && !checked ? '<span class="tag off">Removing</span>'
+        : s.scheduled ? '<span class="tag on">You\'re on</span>'
         : s.kind === 'conference' ? '<span class="tag conf">Conference</span>'
         : s.kind === 'special' ? '<span class="tag spec">Special</span>' : '';
       const label = s.kind === 'regular' ? s.name : `${s.session} session`;
       const count = s.count ? ` · ${s.count} usher${s.count === 1 ? '' : 's'} signed up` : '';
       html += `<label class="svc" for="${id}">
-        <input type="checkbox" id="${id}" data-key="${esc(s.key)}" ${s.scheduled || state.selected.has(s.key) ? 'checked' : ''} ${s.scheduled ? 'disabled' : ''}>
-        <span class="what"><span class="time">${esc(label)}</span><br><span class="meta">${esc(s.startLabel)}${esc(count)}</span></span>
+        <input type="checkbox" id="${id}" data-key="${esc(s.key)}" ${checked ? 'checked' : ''}>
+        <span class="what"><span class="time">${esc(label)}</span><br><span class="meta">${esc(s.time)}${esc(count)}</span></span>
         ${tag}</label>`;
     }
     if (day) html += '</div>';
@@ -229,16 +239,21 @@
   }
 
   function updateBar() {
-    const n = state.selected.size, btn = $('submitBtn');
-    btn.disabled = n === 0;
-    btn.textContent = n ? `Schedule me for ${n} service${n === 1 ? '' : 's'}` : 'Select services';
+    const { add, remove } = changes(), btn = $('submitBtn');
+    const parts = [];
+    if (add.length) parts.push(`add ${add.length}`);
+    if (remove.length) parts.push(`remove ${remove.length}`);
+    btn.disabled = !parts.length;
+    btn.textContent = !parts.length ? 'Select services'
+      : !remove.length ? `Schedule me for ${add.length} service${add.length === 1 ? '' : 's'}`
+      : `Save changes (${parts.join(', ')})`;
   }
 
   $('list').addEventListener('change', (e) => {
     const key = e.target.dataset && e.target.dataset.key;
     if (!key) return;
-    e.target.checked ? state.selected.add(key) : state.selected.delete(key);
-    updateBar();
+    e.target.checked ? state.want.add(key) : state.want.delete(key);
+    render();
   });
 
   document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => {
@@ -249,19 +264,21 @@
 
   $('signin').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = $('email').value.trim();
+    const name = $('name').value.trim(), email = $('email').value.trim();
+    if (!name) { show('Please enter your name.'); return; }
     if (!/^\S+@\S+\.\S+$/.test(email)) { show('Please enter a valid email address.'); return; }
-    state.email = email;
-    state.code = $('code').value.trim() || state.code;
+    Object.assign(state, { name, email, phone: $('phone').value.trim(), code: $('code').value.trim() || state.code });
     show('');
     const btn = $('signinBtn');
-    busy(btn, true, 'Looking you up…');
+    busy(btn, true, 'Loading services…');
     try {
       await load();
-      store.set('usherEmail', email);
+      store.set('usherName', state.name);
+      store.set('usherEmail', state.email);
+      store.set('usherPhone', state.phone);
       store.set('usherCode', state.code);
     } catch (err) {
-      if (err.status === 403) { $('codeField').classList.remove('hidden'); $('code').focus(); }
+      if (err.needsCode) { $('codeField').classList.remove('hidden'); $('code').focus(); }
       show(esc(err.message));
     } finally {
       busy(btn, false, 'See available services');
@@ -269,40 +286,40 @@
   });
 
   $('switchUser').addEventListener('click', () => {
-    store.set('usherEmail', '');
-    $('email').value = '';
-    state.services = []; state.selected.clear();
+    ['usherName', 'usherEmail', 'usherPhone'].forEach((k) => store.set(k, ''));
+    ['name', 'email', 'phone'].forEach((id) => { $(id).value = ''; });
+    state.services = []; state.want.clear();
     $('picker').classList.add('hidden'); $('bar').classList.add('hidden');
     $('signin').classList.remove('hidden');
     show('');
-    $('email').focus();
+    $('name').focus();
   });
 
   $('submitBtn').addEventListener('click', async () => {
-    const keys = [...state.selected];
+    const { add, remove } = changes();
     const byKey = new Map(state.services.map((s) => [s.key, s]));
     const btn = $('submitBtn');
-    busy(btn, true, 'Adding you to the schedule…');
+    busy(btn, true, 'Saving…');
     show('');
     try {
-      const res = await call('POST', null, { email: state.email, code: state.code, keys });
+      const res = await server('saveSignup', { name: state.name, email: state.email, phone: state.phone, code: state.code, add, remove });
       const lines = (arr) => arr.map((k) => byKey.get(k)).filter(Boolean).map((s) => `<li>${esc(fmtShort(s))}</li>`).join('');
       let html = '';
-      if (res.done.length) html += `<strong>Thank you! You're scheduled for:</strong><ul class="result">${lines(res.done)}</ul>`;
-      if (res.skipped.length) html += `<div style="margin-top:8px">Already on the schedule:</div><ul class="result">${lines(res.skipped)}</ul>`;
+      if (res.added.length) html += `<strong>Thank you! You're scheduled for:</strong><ul class="result">${lines(res.added)}</ul>`;
+      if (res.removed.length) html += `<div style="margin-top:8px"><strong>Removed:</strong></div><ul class="result">${lines(res.removed)}</ul>`;
+      if (res.already.length) html += `<div style="margin-top:8px">Already on the schedule:</div><ul class="result">${lines(res.already)}</ul>`;
       show(html || 'Nothing to change.', 'ok');
       await load(); // refresh "You're on" badges and counts
     } catch (err) {
-      show(`${esc(err.message)}<br>Some services may have been saved. Refresh to see what's on your schedule, or contact your team leader.`);
-      updateBar();
+      show(`${esc(err.message)}<br>Please try again, or contact your team leader.`);
     } finally {
-      btn.disabled = state.selected.size === 0;
+      busy(btn, false);
       updateBar();
     }
   });
 
   // Returning ushers go straight to the list.
-  if ($('email').value) $('signin').requestSubmit();
+  if ($('name').value && $('email').value) $('signin').requestSubmit();
 })();
 </script>
 </body>
