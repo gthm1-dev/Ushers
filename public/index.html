@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>River Teams Ushers — Sign Up</title>
+<meta name="description" content="River at Tampa Bay Church · River Teams Ushers · Ministry of Helps self-scheduling">
+<meta property="og:title" content="River Teams Ushers — Self-Scheduling">
+<meta property="og:description" content="Pick the services you can serve. You'll be added to the Planning Center schedule.">
+<style>
+  :root {
+    --bg: #f5f7fa; --card: #ffffff; --ink: #1b2430; --muted: #5d6b7c; --line: #dfe5ec;
+    --brand: #0b5c8f; --brand-ink: #ffffff; --accent: #e8f2fa; --ok: #1d7a46; --ok-bg: #e5f5ec;
+    --warn: #9a5b00; --warn-bg: #fff4e0; --err: #b3261e; --err-bg: #fdecea;
+    --conf: #6b3fa0; --conf-bg: #f2ecfa; --spec: #a0471f; --spec-bg: #fcefe8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11161c; --card: #1a2129; --ink: #e8edf2; --muted: #9aa8b7; --line: #2c3642;
+      --brand: #4fa3d9; --brand-ink: #0b1620; --accent: #1d2c3a; --ok: #6fd39b; --ok-bg: #16301f;
+      --warn: #f2b45a; --warn-bg: #33270f; --err: #ff8a80; --err-bg: #3a1a18;
+      --conf: #c4a3ee; --conf-bg: #2a2138; --spec: #f2a37f; --spec-bg: #35231a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header { background: var(--brand); color: var(--brand-ink); padding: 20px 16px 18px; }
+  header .church { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; opacity: .85; }
+  header h1 { margin: 2px 0 0; font-size: 22px; }
+  header .sub { font-size: 14px; opacity: .9; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 120px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  label { display: block; font-weight: 600; margin: 0 0 6px; }
+  input[type=email], input[type=text] { width: 100%; font-size: 17px; padding: 12px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  .field + .field { margin-top: 12px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  button { font: inherit; cursor: pointer; }
+  .btn { display: inline-block; width: 100%; padding: 14px; border: 0; border-radius: 10px;
+    background: var(--brand); color: var(--brand-ink); font-weight: 700; font-size: 17px; margin-top: 14px; }
+  .btn[disabled] { opacity: .55; cursor: default; }
+  .link { background: none; border: 0; color: var(--brand); padding: 0; text-decoration: underline; font-size: 14px; }
+  .msg { border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 15px; }
+  .msg.err { background: var(--err-bg); color: var(--err); }
+  .msg.ok { background: var(--ok-bg); color: var(--ok); }
+  .msg.warn { background: var(--warn-bg); color: var(--warn); }
+  .hidden { display: none !important; }
+  .hello { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px; }
+  .chip { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px;
+    padding: 7px 12px; font-size: 14px; }
+  .chip[aria-pressed=true] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  .month { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+    margin: 18px 4px 8px; font-weight: 700; }
+  .day { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+  .day-head { padding: 10px 14px; background: var(--accent); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
+  .day-head .event { font-weight: 600; font-size: 13px; text-align: right; }
+  .day-head.conference .event { color: var(--conf); }
+  .day-head.special .event { color: var(--spec); }
+  .svc { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .svc:first-of-type { border-top: 0; }
+  .svc input { width: 24px; height: 24px; accent-color: var(--brand); flex: none; }
+  .svc .what { flex: 1; min-width: 0; }
+  .svc .time { font-weight: 600; }
+  .svc .meta { color: var(--muted); font-size: 13px; }
+  .tag { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .tag.on { background: var(--ok-bg); color: var(--ok); }
+  .tag.conf { background: var(--conf-bg); color: var(--conf); }
+  .tag.spec { background: var(--spec-bg); color: var(--spec); }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .bar .inner { max-width: 640px; margin: 0 auto; }
+  .bar .btn { margin-top: 0; }
+  .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
+  ul.result { margin: 8px 0 0; padding-left: 20px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -3px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="church">River at Tampa Bay Church</div>
+  <h1>River Teams Ushers</h1>
+  <div class="sub">Ministry of Helps Department · Self-Scheduling</div>
+</header>
+
+<main>
+  <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
+
+  <!-- Step 1: who are you -->
+  <form id="signin" class="card" novalidate>
+    <div class="field">
+      <label for="email">Your email</label>
+      <input id="email" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com">
+      <p class="hint">Use the email Planning Center has on file for you.</p>
+    </div>
+    <div class="field hidden" id="codeField">
+      <label for="code">Team access code</label>
+      <input id="code" type="text" autocomplete="off" autocapitalize="off" placeholder="From your team leader">
+    </div>
+    <button class="btn" id="signinBtn" type="submit">See available services</button>
+  </form>
+
+  <!-- Step 2: pick services -->
+  <section id="picker" class="hidden">
+    <div class="card hello">
+      <div><strong id="who"></strong><div class="hint" id="windowText"></div></div>
+      <button class="link" id="switchUser" type="button">Not you?</button>
+    </div>
+    <div class="chips" role="group" aria-label="Filter services">
+      <button class="chip" data-filter="all" aria-pressed="true" type="button">All</button>
+      <button class="chip" data-filter="sunam" aria-pressed="false" type="button">Sunday AM</button>
+      <button class="chip" data-filter="sunpm" aria-pressed="false" type="button">Sunday PM</button>
+      <button class="chip" data-filter="wedpm" aria-pressed="false" type="button">Wednesday PM</button>
+      <button class="chip" data-filter="events" aria-pressed="false" type="button">Conferences &amp; Special</button>
+    </div>
+    <div id="list"></div>
+  </section>
+</main>
+
+<div class="bar hidden" id="bar">
+  <div class="inner">
+    <button class="btn" id="submitBtn" type="button" disabled>Select services</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const API = '/api/pco';
+  const $ = (id) => document.getElementById(id);
+  const state = { email: '', code: '', services: [], selected: new Set(), filter: 'all' };
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+    set(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} },
+  };
+
+  // A code in the link (…/?code=XYZ) saves ushers from typing it.
+  const params = new URLSearchParams(location.search);
+  state.code = params.get('code') || store.get('usherCode');
+  if (state.code) $('code').value = state.code;
+  $('email').value = store.get('usherEmail');
+
+  function show(text, kind = 'err') {
+    const m = $('msg');
+    if (!text) { m.className = 'msg hidden'; m.innerHTML = ''; return; }
+    m.className = `msg ${kind}`;
+    m.innerHTML = text;
+    m.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.innerHTML = on ? `<span class="spinner"></span>${label}` : label; };
+
+  const dateOf = (ymd) => { const [y, m, d] = ymd.split('-').map(Number); return new Date(y, m - 1, d); };
+  const fmtDay = (ymd) => dateOf(ymd).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const fmtMonth = (ymd) => dateOf(ymd).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const fmtShort = (s) => `${dateOf(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${s.session} (${s.startLabel})`;
+
+  function matches(s) {
+    switch (state.filter) {
+      case 'sunam': return s.kind === 'regular' && s.weekday === 'Sun' && s.session === 'AM';
+      case 'sunpm': return s.kind === 'regular' && s.weekday === 'Sun' && s.session === 'PM';
+      case 'wedpm': return s.kind === 'regular' && s.weekday === 'Wed';
+      case 'events': return s.kind !== 'regular';
+      default: return true;
+    }
+  }
+
+  async function call(method, query, body) {
+    const url = method === 'GET' ? `${API}?${new URLSearchParams(query)}` : API;
+    const res = await fetch(url, {
+      method,
+      headers: body ? { 'content-type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({ error: 'Unexpected response from server.' }));
+    if (!res.ok) { const e = new Error(data.error || res.statusText); e.status = res.status; throw e; }
+    return data;
+  }
+
+  async function load() {
+    const data = await call('GET', { email: state.email, code: state.code });
+    state.services = data.services;
+    state.selected.clear();
+    $('who').textContent = `Hi, ${data.usher.name}`;
+    if (state.services.length) {
+      const first = state.services[0].date, last = state.services[state.services.length - 1].date;
+      $('windowText').textContent = `Services from ${fmtDay(first)} through ${fmtDay(last)}`;
+    } else {
+      $('windowText').textContent = '';
+    }
+    $('signin').classList.add('hidden');
+    $('picker').classList.remove('hidden');
+    $('bar').classList.remove('hidden');
+    render();
+  }
+
+  function render() {
+    const list = $('list');
+    const visible = state.services.filter(matches);
+    if (!visible.length) { list.innerHTML = '<div class="empty">No services in this view.</div>'; updateBar(); return; }
+
+    let html = '', month = '', day = '';
+    for (const s of visible) {
+      const m = fmtMonth(s.date);
+      if (m !== month) { if (day) html += '</div>'; day = ''; html += `<div class="month">${esc(m)}</div>`; month = m; }
+      if (s.date !== day) {
+        if (day) html += '</div>';
+        const ev = s.kind === 'regular' ? '' : `<span class="event">${esc(s.name)}</span>`;
+        html += `<div class="day"><div class="day-head ${s.kind}"><span>${esc(fmtDay(s.date))}</span>${ev}</div>`;
+        day = s.date;
+      }
+      const id = `svc_${s.key}`;
+      const tag = s.scheduled ? '<span class="tag on">You\'re on</span>'
+        : s.kind === 'conference' ? '<span class="tag conf">Conference</span>'
+        : s.kind === 'special' ? '<span class="tag spec">Special</span>' : '';
+      const label = s.kind === 'regular' ? s.name : `${s.session} session`;
+      const count = s.count ? ` · ${s.count} usher${s.count === 1 ? '' : 's'} signed up` : '';
+      html += `<label class="svc" for="${id}">
+        <input type="checkbox" id="${id}" data-key="${esc(s.key)}" ${s.scheduled || state.selected.has(s.key) ? 'checked' : ''} ${s.scheduled ? 'disabled' : ''}>
+        <span class="what"><span class="time">${esc(label)}</span><br><span class="meta">${esc(s.startLabel)}${esc(count)}</span></span>
+        ${tag}</label>`;
+    }
+    if (day) html += '</div>';
+    list.innerHTML = html;
+    updateBar();
+  }
+
+  function updateBar() {
+    const n = state.selected.size, btn = $('submitBtn');
+    btn.disabled = n === 0;
+    btn.textContent = n ? `Schedule me for ${n} service${n === 1 ? '' : 's'}` : 'Select services';
+  }
+
+  $('list').addEventListener('change', (e) => {
+    const key = e.target.dataset && e.target.dataset.key;
+    if (!key) return;
+    e.target.checked ? state.selected.add(key) : state.selected.delete(key);
+    updateBar();
+  });
+
+  document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => {
+    state.filter = chip.dataset.filter;
+    document.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+    render();
+  }));
+
+  $('signin').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('email').value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { show('Please enter a valid email address.'); return; }
+    state.email = email;
+    state.code = $('code').value.trim() || state.code;
+    show('');
+    const btn = $('signinBtn');
+    busy(btn, true, 'Looking you up…');
+    try {
+      await load();
+      store.set('usherEmail', email);
+      store.set('usherCode', state.code);
+    } catch (err) {
+      if (err.status === 403) { $('codeField').classList.remove('hidden'); $('code').focus(); }
+      show(esc(err.message));
+    } finally {
+      busy(btn, false, 'See available services');
+    }
+  });
+
+  $('switchUser').addEventListener('click', () => {
+    store.set('usherEmail', '');
+    $('email').value = '';
+    state.services = []; state.selected.clear();
+    $('picker').classList.add('hidden'); $('bar').classList.add('hidden');
+    $('signin').classList.remove('hidden');
+    show('');
+    $('email').focus();
+  });
+
+  $('submitBtn').addEventListener('click', async () => {
+    const keys = [...state.selected];
+    const byKey = new Map(state.services.map((s) => [s.key, s]));
+    const btn = $('submitBtn');
+    busy(btn, true, 'Adding you to the schedule…');
+    show('');
+    try {
+      const res = await call('POST', null, { email: state.email, code: state.code, keys });
+      const lines = (arr) => arr.map((k) => byKey.get(k)).filter(Boolean).map((s) => `<li>${esc(fmtShort(s))}</li>`).join('');
+      let html = '';
+      if (res.done.length) html += `<strong>Thank you! You're scheduled for:</strong><ul class="result">${lines(res.done)}</ul>`;
+      if (res.skipped.length) html += `<div style="margin-top:8px">Already on the schedule:</div><ul class="result">${lines(res.skipped)}</ul>`;
+      show(html || 'Nothing to change.', 'ok');
+      await load(); // refresh "You're on" badges and counts
+    } catch (err) {
+      show(`${esc(err.message)}<br>Some services may have been saved. Refresh to see what's on your schedule, or contact your team leader.`);
+      updateBar();
+    } finally {
+      btn.disabled = state.selected.size === 0;
+      updateBar();
+    }
+  });
+
+  // Returning ushers go straight to the list.
+  if ($('email').value) $('signin').requestSubmit();
+})();
+</script>
+</body>
+</html>

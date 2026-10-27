@@ -41,6 +41,11 @@ netlify.toml · package.json
 
 3. Deploy. Your link is `https://<site>.netlify.app` — post that in the Signal group.
    (Rename the site or add a custom domain like `ushers.revival.com` if you like.)
+   If you set `ACCESS_CODE`, post `https://<site>.netlify.app/?code=YOURCODE` so
+   ushers never have to type it. The page remembers their email on their phone.
+
+> **Never put your Planning Center username/password in this app or in Netlify.**
+> The app only uses the Personal Access Token above, which you can revoke at any time.
 
 ## 3. How it works
 
@@ -65,6 +70,16 @@ netlify.toml · package.json
 
 On conference / special dates the regular Sun AM, Sun PM and Wed PM services are
 replaced by the conference sessions.
+
+## 5. Things to confirm before going live
+
+- **One plan per service.** The app matches PCO plans by date + AM/PM (anything
+  starting before 2 PM counts as AM). If your Sunday is one plan with both AM and
+  PM service times, the PM signup will create a separate plan — either split
+  Sunday into AM and PM plans (or service types), or adjust `loadPlans`.
+- **Service times** in `calendar.js` (`TIMES`).
+- **Position name** matches what ushers are assigned to in the team.
+- Do a test signup with your own email, then check the plan in Services.
 
 ## Local test
 
