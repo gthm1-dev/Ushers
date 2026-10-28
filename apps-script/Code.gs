@@ -15,11 +15,12 @@ const TIMES = {
 // ---- Annual conferences: last full Sunday-to-Sunday week of the month ----
 // The week runs from the second-to-last Sunday through the last Sunday of the
 // month (8 days, AM + PM = 16 services). Override a year in CONFERENCE_OVERRIDES.
+// `needed` = ushers needed per session: a number, or { AM: n, PM: n }.
 const ANNUAL_CONFERENCES = [
-  { month: 1, name: 'Prayer Conference – Winter Camp-Meeting' },
-  { month: 5, name: 'Spring Ministers & Leaders Conference' },
-  { month: 7, name: 'Summer Camp Meeting – 3 in 1 Family Fire Conference' },
-  { month: 10, name: 'Fall Ministers & Leaders Conference – Faith Conference' },
+  { month: 1, name: 'Prayer Conference – Winter Camp-Meeting', needed: 50 },
+  { month: 5, name: 'Spring Ministers & Leaders Conference', needed: 50 },
+  { month: 7, name: 'Summer Camp Meeting – 3 in 1 Family Fire Conference', needed: 50 },
+  { month: 10, name: 'Fall Ministers & Leaders Conference – Faith Conference', needed: 50 },
 ];
 
 // { '2027-01': { start: '2027-01-24', end: '2027-01-31' } } — only if the
@@ -28,25 +29,32 @@ const CONFERENCE_OVERRIDES = {};
 
 // ---- Explicitly dated services --------------------------------------------
 // These replace the regular / conference services on that date.
+const WOMENS_2027 = "Covenant Women's Conference 2027", MENS_2027 = "Men's Conference 2027";
+const CONF_NEEDED = { AM: 40, PM: 50 };
 const SPECIAL_SERVICES = [
-  { date: '2026-12-20', sessions: ['AM', 'PM'], name: 'Christmas Sunday' },
-  { date: '2026-12-24', sessions: ['PM'], name: 'Christmas Eve Service' },
-  { date: '2026-12-31', sessions: ['PM'], name: "New Year's Eve Service" },
+  { date: '2026-12-20', sessions: ['AM', 'PM'], name: 'Christmas Sunday', needed: 30 },
+  { date: '2026-12-24', sessions: ['PM'], name: 'Christmas Eve Service', needed: 30 },
+  { date: '2026-12-31', sessions: ['PM'], name: "New Year's Eve Service", needed: 30 },
 
-  { date: '2027-03-31', sessions: ['PM'], name: "Covenant Women's Conference 2027" },
-  { date: '2027-04-01', sessions: ['AM', 'PM'], name: "Covenant Women's Conference 2027" },
-  { date: '2027-04-02', sessions: ['AM', 'PM'], name: "Covenant Women's Conference 2027" },
-  { date: '2027-04-03', sessions: ['AM'], name: "Covenant Women's Conference 2027" },
+  { date: '2027-03-31', sessions: ['PM'], name: WOMENS_2027, needed: CONF_NEEDED },
+  { date: '2027-04-01', sessions: ['AM', 'PM'], name: WOMENS_2027, needed: CONF_NEEDED },
+  { date: '2027-04-02', sessions: ['AM', 'PM'], name: WOMENS_2027, needed: CONF_NEEDED },
+  { date: '2027-04-03', sessions: ['AM'], name: WOMENS_2027, needed: CONF_NEEDED },
 
-  { date: '2027-09-01', sessions: ['PM'], name: "Men's Conference 2027" },
-  { date: '2027-09-02', sessions: ['AM', 'PM'], name: "Men's Conference 2027" },
-  { date: '2027-09-03', sessions: ['AM', 'PM'], name: "Men's Conference 2027" },
-  { date: '2027-09-04', sessions: ['PM'], name: "Men's Conference 2027" },
+  { date: '2027-09-01', sessions: ['PM'], name: MENS_2027, needed: CONF_NEEDED },
+  { date: '2027-09-02', sessions: ['AM', 'PM'], name: MENS_2027, needed: CONF_NEEDED },
+  { date: '2027-09-03', sessions: ['AM', 'PM'], name: MENS_2027, needed: CONF_NEEDED },
+  { date: '2027-09-04', sessions: ['PM'], name: MENS_2027, needed: CONF_NEEDED },
 ];
+
+// Ushers needed at regular Sunday AM / Sunday PM / Wednesday PM services.
+// null = no limit (the page just shows how many have signed up).
+const REGULAR_NEEDED = { AM: null, PM: null, WED: null };
 
 // ---- Sheet layout ---------------------------------------------------------
 const SIGNUPS = 'Signups';
 const SCHEDULE = 'Schedule';
+const COVERAGE = 'Coverage';
 const HEADERS = ['Timestamp', 'Service Date', 'Day', 'Session', 'Time', 'Service', 'Type',
   'Name', 'Email', 'Phone', 'Key', 'Status'];
 const COL = Object.fromEntries(HEADERS.map((h, i) => [h, i]));
@@ -102,15 +110,18 @@ function saveSignup(form) {
     const rows = readRows_();
     const now = new Date();
     // row index (in sheet) of this usher's existing entry per key
-    const existing = new Map();
+    const existing = new Map(), counts = {};
     rows.forEach((r, i) => {
+      if (r[COL.Status] === SCHEDULED) counts[r[COL.Key]] = (counts[r[COL.Key]] || 0) + 1;
       if (normEmail_(r[COL.Email]) === email) existing.set(String(r[COL.Key]), { row: i + 2, status: r[COL.Status] });
     });
 
-    const added = [], already = [], removed = [], append = [];
+    const added = [], already = [], removed = [], full = [], append = [];
     for (const key of add) {
       const s = byKey.get(key), ex = existing.get(key);
       if (ex && ex.status === SCHEDULED) { already.push(key); continue; }
+      if (s.needed && (counts[key] || 0) >= s.needed) { full.push(key); continue; }
+      counts[key] = (counts[key] || 0) + 1;
       const values = rowFor_(s, now, name, email, phone);
       if (ex) sheet.getRange(ex.row, 1, 1, HEADERS.length).setValues([values]);
       else append.push(values);
@@ -126,7 +137,7 @@ function saveSignup(form) {
     if (append.length) {
       sheet.getRange(sheet.getLastRow() + 1, 1, append.length, HEADERS.length).setValues(append);
     }
-    return { added, already, removed };
+    return { added, already, removed, full };
   } finally {
     lock.releaseLock();
   }
@@ -156,6 +167,13 @@ function ensureSheets_() {
     const view = ss.insertSheet(SCHEDULE);
     view.getRange('A1').setFormula(
       `=QUERY(${SIGNUPS}!A:L, "select B, C, D, E, F, H, J, I where L = '${SCHEDULED}' order by B, D, H", 1)`);
+    view.getRange('A:A').setNumberFormat('ddd, mmm d, yyyy');
+    view.setFrozenRows(1);
+  }
+  if (!ss.getSheetByName(COVERAGE)) {
+    const view = ss.insertSheet(COVERAGE);
+    view.getRange('A1').setFormula(
+      `=QUERY(${SIGNUPS}!A:L, "select B, D, F, count(H) where L = '${SCHEDULED}' group by B, D, F order by B, D label count(H) 'Ushers Scheduled'", 1)`);
     view.getRange('A:A').setNumberFormat('ddd, mmm d, yyyy');
     view.setFrozenRows(1);
   }
@@ -197,8 +215,9 @@ function conferenceWeek_(year, month) {
   return { start: addDays_(end, -7), end };
 }
 
-function makeService_(dateStr, sessionKey, name, kind) {
+function makeService_(dateStr, sessionKey, name, kind, needed) {
   const t = TIMES[sessionKey];
+  if (needed && typeof needed === 'object') needed = needed[sessionKey === 'WED' ? 'PM' : sessionKey];
   return {
     key: `${dateStr}_${sessionKey}`,
     date: dateStr,
@@ -208,6 +227,7 @@ function makeService_(dateStr, sessionKey, name, kind) {
     name,
     kind, // 'regular' | 'conference' | 'special'
     kindLabel: { regular: 'Regular', conference: 'Conference', special: 'Special' }[kind],
+    needed: needed || null,
   };
 }
 
@@ -222,19 +242,19 @@ function buildCalendar_(from, days) {
       const { start, end } = conferenceWeek_(y, c.month);
       for (let d = start; d <= end; d = addDays_(d, 1)) {
         const ds = ymd_(d);
-        byDate.set(ds, ['AM', 'PM'].map((s) => makeService_(ds, s, c.name, 'conference')));
+        byDate.set(ds, ['AM', 'PM'].map((s) => makeService_(ds, s, c.name, 'conference', c.needed)));
       }
     }
   }
   for (const s of SPECIAL_SERVICES) {
-    byDate.set(s.date, s.sessions.map((sess) => makeService_(s.date, sess, s.name, 'special')));
+    byDate.set(s.date, s.sessions.map((sess) => makeService_(s.date, sess, s.name, 'special', s.needed)));
   }
   for (let d = from; d <= to; d = addDays_(d, 1)) {
     const ds = ymd_(d);
     if (byDate.has(ds)) continue;
     const dow = d.getUTCDay();
-    if (dow === 0) byDate.set(ds, [makeService_(ds, 'AM', 'Sunday AM Service', 'regular'), makeService_(ds, 'PM', 'Sunday PM Service', 'regular')]);
-    if (dow === 3) byDate.set(ds, [makeService_(ds, 'WED', 'Wednesday PM Service', 'regular')]);
+    if (dow === 0) byDate.set(ds, [makeService_(ds, 'AM', 'Sunday AM Service', 'regular', REGULAR_NEEDED.AM), makeService_(ds, 'PM', 'Sunday PM Service', 'regular', REGULAR_NEEDED.PM)]);
+    if (dow === 3) byDate.set(ds, [makeService_(ds, 'WED', 'Wednesday PM Service', 'regular', REGULAR_NEEDED.WED)]);
   }
 
   const fromS = ymd_(from), toS = ymd_(to);

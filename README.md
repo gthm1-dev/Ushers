@@ -54,6 +54,7 @@ Anyone opening the plain link without the code will be asked for it.
   Special), name, email, phone, key, and status. When an usher removes themselves
   the status changes to **Cancelled** (the row is kept for your records).
 - **Schedule** — a live view of everyone *Scheduled*, sorted by date and session.
+- **Coverage** — how many ushers are scheduled for each service.
   Use the filter (**Data → Create a filter**) to see a single day.
 
 Don't rename the tabs or reorder the Signups columns — the script relies on them.
@@ -68,6 +69,10 @@ You can add extra tabs, colours, or share the sheet with other leaders freely.
 - **Dated services** — `SPECIAL_SERVICES` holds Dec 20/24/31 2026, Covenant Women's
   Conference 2027 and Men's Conference 2027. Add future dates there.
 - **How far ahead** — `SCHEDULE_WINDOW_DAYS = 45`.
+- **Ushers needed** — `needed` on each conference / special service (a number, or
+  `{ AM: 40, PM: 50 }`), and `REGULAR_NEEDED` for regular services (`null` = no
+  limit). The page shows "12 of 50 ushers · 38 more needed"; once a service is full
+  it shows **Full** and takes no more sign-ups.
 
 On conference / special dates the regular Sunday AM, Sunday PM and Wednesday PM
 services are replaced by those sessions.
