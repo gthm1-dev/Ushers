@@ -230,9 +230,10 @@
         : s.kind === 'special' ? '<span class="tag spec">Special</span>' : '';
       const label = s.kind === 'regular' ? s.name : `${s.session} session`;
       const isFull = s.needed && s.count >= s.needed && !s.scheduled;
-      const count = !s.needed ? (s.count ? ` · ${s.count} usher${s.count === 1 ? '' : 's'} signed up` : '')
-        : s.count >= s.needed ? ` · ${s.count} of ${s.needed} ushers · Full`
-        : ` · ${s.count} of ${s.needed} ushers · ${s.needed - s.count} more needed`;
+      const stillNeeded = s.needed ? Math.max(s.needed - s.count, 0) : 0;
+      const count = !s.needed ? ''
+        : stillNeeded ? ` · ${stillNeeded} usher${stillNeeded === 1 ? '' : 's'} still needed`
+        : ' · No more ushers needed';
       const tagHtml = isFull ? '<span class="tag full">Full</span>' : tag;
       html += `<label class="svc${isFull ? ' is-full' : ''}" for="${id}">
         <input type="checkbox" id="${id}" data-key="${esc(s.key)}" ${checked ? 'checked' : ''} ${isFull ? 'disabled' : ''}>

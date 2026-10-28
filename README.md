@@ -71,7 +71,7 @@ You can add extra tabs, colours, or share the sheet with other leaders freely.
 - **How far ahead** — `SCHEDULE_WINDOW_DAYS = 45`.
 - **Ushers needed** — `needed` on each conference / special service (a number, or
   `{ AM: 40, PM: 50 }`), and `REGULAR_NEEDED` for regular services (`null` = no
-  limit). The page shows "12 of 50 ushers · 38 more needed"; once a service is full
+  limit). The page shows "38 ushers still needed"; once a service is full
   it shows **Full** and takes no more sign-ups.
 
 On conference / special dates the regular Sunday AM, Sunday PM and Wednesday PM
