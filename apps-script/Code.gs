@@ -48,8 +48,8 @@ const SPECIAL_SERVICES = [
 ];
 
 // Ushers needed at regular Sunday AM / Sunday PM / Wednesday PM services.
-// null = no limit (the page just shows how many have signed up).
-const REGULAR_NEEDED = { AM: null, PM: null, WED: null };
+// null = no limit.
+const REGULAR_NEEDED = { AM: 50, PM: 30, WED: 30 };
 
 // ---- Sheet layout ---------------------------------------------------------
 const SIGNUPS = 'Signups';
